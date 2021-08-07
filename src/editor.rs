@@ -1,6 +1,9 @@
 use crate::Terminal;
 use termion::{event::Key, input::TermRead, raw::IntoRawMode};
 
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 // we want this to be public to main.rs
 // struct contains fields for the "class"
 pub struct Editor {
@@ -13,8 +16,7 @@ impl Editor {
     // removing self as per https://rust-lang.github.io/rust-clippy/master/index.html#unused_self
     // results in errors :( 
     pub fn run(&mut self) {
-        
-       
+
         loop {
             if let Err(error) = self.refresh_screen() {
                 die(error);
@@ -25,21 +27,22 @@ impl Editor {
             if let Err(error) = self.process_keypresses() {
                 die(error);
             }
-
         }
     }
 
     fn refresh_screen(&self) -> Result<(), std::io::Error> {
-        
+        Terminal::cursor_hide(); 
         Terminal::clear_screen();
         Terminal::cursor_position(0, 0);
         if self.should_quit {
+            Terminal::clear_screen();
             println!("Goodbye.\r");
         } else {
             self.draw_rows();
             // after drawing rows, reset cursor
             Terminal::cursor_position(0, 0);
         }
+        Terminal::cursor_show();
         Terminal::flush()
     }
 
@@ -53,9 +56,15 @@ impl Editor {
     }
 
     fn draw_rows(&self) {
-        for _ in 0..self.terminal.size().height - 1 {
-            // ~ then newline
-            println!("~\r");
+        let height = self.terminal.size().height;
+        for row in 0..height - 1 {
+
+            Terminal::clear_current_line();
+            if row == height / 3 {
+                println!("Tera - a text editor in rust -- version {}", VERSION);
+            } else {
+                println!("~\r");
+            }
         }
     }
 
