@@ -6,6 +6,9 @@ use termion::{event::Key, input::TermRead, raw::IntoRawMode};
 pub struct Editor {}
 
 impl Editor {
+    // clippy says unused self
+    // removing self as per https://rust-lang.github.io/rust-clippy/master/index.html#unused_self
+    // results in errors :( 
     pub fn run(&self) {
         
         let _stdout = stdout().into_raw_mode().unwrap();
@@ -33,12 +36,12 @@ impl Editor {
     // for the struct
     // with default values (but none for now)
     pub fn default() -> Self {
-        Editor {}
+        Self {}
     }
 }
 
 fn die(e: std::io::Error) {
-   panic!(e);
+   std::panic::panic_any(e);
 }
 
 
