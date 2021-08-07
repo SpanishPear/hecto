@@ -82,7 +82,7 @@ impl Editor {
 
 fn die(e: std::io::Error) {
     print!("{}", termion::clear::All);
-    std::panic::panic_any(e);
+    panic!(e);
 }
 
 
