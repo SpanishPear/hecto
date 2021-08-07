@@ -28,6 +28,13 @@ impl Editor {
         }
 
     }
+
+    // this is essentially an init function 
+    // for the struct
+    // with default values (but none for now)
+    pub fn default() -> Self {
+        Editor {}
+    }
 }
 
 fn die(e: std::io::Error) {
