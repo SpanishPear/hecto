@@ -1,3 +1,5 @@
+use std::io::{self, stdout, Write};
+use termion::{input::TermRead, event::Key, raw::{IntoRawMode, RawTerminal}};
 
 pub struct Size {
     pub width: u16,
@@ -5,7 +7,8 @@ pub struct Size {
 }
 
 pub struct Terminal {
-    size: Size
+       size:    Size,
+    _stdout:    RawTerminal<std::io::Stdout> 
 }
 
 
@@ -18,14 +21,37 @@ impl Terminal {
         // size is a tuple
         // size.0 is width, size.1 is height
         Ok(Self {
-            size: Size {
-                width: size.0,
-                height: size.1,
-            }
+               size: Size {
+                        width: size.0,
+                        height: size.1,
+                     },
+            _stdout: stdout().into_raw_mode().unwrap()
         })
     }
 
     pub fn size(&self) -> &Size {
         &self.size
+    }
+
+    pub fn clear_screen() {
+        print!("{}", termion::clear::All);
+    }
+        
+    pub fn cursor_position(x: u16, y: u16) {
+        let x= x.saturating_add(1);
+        let y = y.saturating_add(1);
+        print!("{}", termion::cursor::Goto(x,y));
+    }
+
+    pub fn flush() -> Result<(), std::io::Error> {
+        io::stdout().flush()
+    }
+
+    pub fn read_key() -> Result<Key, std::io::Error> {
+        loop {
+            if let Some(key) = io::stdin().lock().keys().next() {
+                return key;
+            }             
+        }
     }
 }
