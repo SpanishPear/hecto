@@ -30,17 +30,16 @@ impl Editor {
     }
 
     fn refresh_screen(&self) -> Result<(), std::io::Error> {
-        print!("\x1b[2J");
+        print!("{}", termion::clear::All);
         io::stdout().flush()
     }
 
     fn process_keypresses(&mut self) -> Result<(), std::io::Error> {
         
         let pressed_key = read_key()?;
-        match pressed_key  {
-            Key::Ctrl('q') => self.should_quit = true,
-            _ => (),
-        }
+       
+        if let Key::Ctrl('q') = pressed_key { self.should_quit = true }
+
         Ok(())
     }
 
