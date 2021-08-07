@@ -1,5 +1,5 @@
 [package]
-name = "hecto"
+name = "milli"
 version = "0.1.0"
 authors = ["SpanishPear <shrey.somaiya@gmail.com>"]
 edition = "2018"

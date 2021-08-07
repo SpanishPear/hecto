@@ -1,4 +1,4 @@
-# tera
+# milli
 Making text editor in rust i guess
 
 Using inspo from 
