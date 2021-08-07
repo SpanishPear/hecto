@@ -1,10 +1,12 @@
+use crate::Terminal;
 use std::io::{self, stdout, Write};
 use termion::{event::Key, input::TermRead, raw::IntoRawMode};
 
 // we want this to be public to main.rs
-// hence pub
+// struct contains fields for the "class"
 pub struct Editor {
     should_quit: bool,
+    terminal: Terminal,
 }
 
 impl Editor {
@@ -33,6 +35,10 @@ impl Editor {
         print!("{}{}", termion::clear::All, termion::cursor::Goto(1,1));
         if self.should_quit {
             println!("Goodbye.\r");
+        } else {
+            self.draw_rows();
+            // after drawing rows, reset cursor
+            print!("{}", termion::cursor::Goto(1,1));
         }
         io::stdout().flush()
     }
@@ -46,12 +52,20 @@ impl Editor {
         Ok(())
     }
 
+    fn draw_rows(&self) {
+        for _ in 0..self.terminal.size().height {
+            // ~ then newline
+            println!("~\r");
+        }
+    }
+
     // this is essentially an init function 
     // for the struct
     // with default values (but none for now)
     pub fn default() -> Self {
         Self {
             should_quit: false,
+            terminal: Terminal::default().expect("Failed to initialize terminal"),
         }
     }
 }
