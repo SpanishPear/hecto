@@ -1,6 +1,6 @@
 use crate::Terminal;
 use termion::{event::Key, input::TermRead, raw::IntoRawMode};
-
+use navigation::Navigable;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -9,7 +9,11 @@ pub struct Position {
 	pub y: usize,
 }
 
-
+impl Position {
+    fn as_tuple(&self) -> (usize, usize) {
+        (self.x, self.y)
+    }
+}
 // we want this to be public to main.rs
 // struct contains fields for the "class"
 pub struct Editor {
@@ -18,7 +22,55 @@ pub struct Editor {
     cursor_position: Position,
 }
 
+mod navigation {
+    use super::Position;
+    use termion::event::Key;
+    pub type Navigation = dyn Fn(&Position) -> Position;
+    
 
+    pub trait Navigable {
+        fn navigation_func(&self) -> Option<&'static Navigation>;
+
+    }
+
+    
+
+    impl Navigable for Key {
+        
+        fn navigation_func(&self) -> Option<&'static Navigation> {
+            match *self {
+                Key::Up => Some(&navigate_up),
+                Key::Down => Some(&navigate_down),
+                Key::Left => Some(&navigate_left),
+                Key::Right => Some(&navigate_right),
+                _ => None, 
+            }
+
+        }
+
+    }
+    
+    fn navigate_up(position: &Position) -> Position {
+        let (x, y) = position.as_tuple();
+        Position {x, y: y.saturating_sub(1)}
+
+    }
+
+    fn navigate_down(position: &Position) -> Position {
+        let (x, y) = position.as_tuple();
+        Position {x, y: y.saturating_add(1)}
+    }
+
+    fn navigate_left(position: &Position) -> Position {
+        let (x, y) = position.as_tuple();
+        Position {x: x.saturating_sub(1), y}
+    }
+
+    fn navigate_right(position: &Position) -> Position {
+        let (x, y) = position.as_tuple();
+        Position {x: x.saturating_add(1), y}
+    }
+}
 
 impl Editor {
     // clippy says unused self
@@ -49,54 +101,39 @@ impl Editor {
         } else {
             self.draw_rows();
             // after drawing rows, reset cursor
-	        Terminal::cursor_position(&self.cursor_position);
+	          Terminal::cursor_position(&self.cursor_position);
         }
         Terminal::cursor_show();
         Terminal::flush()
     }
 
-    fn move_cursor(&mut self, key: Key) {
-    	let Position { mut y, mut x} = self.cursor_position;
-    	match key {
-    		Key::Up => y = y.saturating_sub(1),
-    		Key::Down => y = y.saturating_add(1),
-    		Key::Left => x = x.saturating_sub(1),
-    		Key::Right => x = x.saturating_add(1),
-			_ => (),
-    	}
-    	self.cursor_position = Position { x, y }
-    }
-
     fn process_keypresses(&mut self) -> Result<(), std::io::Error> {
         
         let pressed_key = Terminal::read_key()?;
+        
+        
+        if let Some(navigation) = pressed_key.navigation_func() {
+            self.cursor_position = navigation(&self.cursor_position); 
+            return Ok(());
+        }
 
         match pressed_key {
-        	Key::Ctrl('q') => self.should_quit = true,
-        	Key::Up
-        	 | Key::Down
-        	 | Key::Left
-        	 | Key::Right
-        	 | Key::PageUp
-        	 | Key::PageUp
-        	 | Key::PageDown
-        	 | Key::End
-        	 | Key::Home => self.move_cursor(pressed_key),
-			_ => (),
+            Key::Ctrl('q') => self.should_quit = true,
+			      _ => (),
         }  
 
         Ok(())
     }
 
-	fn render_welcome(&self) {
-		let mut welcome_msg = format!("Milli Editor -- version {}", VERSION);
-		let width = self.terminal.size().width as usize;
-		let len = welcome_msg.len();
-		let padding = width.saturating_sub(len) / 2; 
-		let spaces = " ".repeat(padding.saturating_sub(1));
-		welcome_msg.truncate(width);
-		println!("~{}{}\r",spaces, welcome_msg);
-	}
+    fn render_welcome(&self) {
+        let mut welcome_msg = format!("Milli Editor -- version {}", VERSION);
+		    let width = self.terminal.size().width as usize;
+		    let len = welcome_msg.len();
+		    let padding = width.saturating_sub(len) / 2; 
+		    let spaces = " ".repeat(padding.saturating_sub(1));
+		    welcome_msg.truncate(width);
+		    println!("~{}{}\r",spaces, welcome_msg);
+    }
 
     fn draw_rows(&self) {
         let height = self.terminal.size().height;
@@ -104,7 +141,7 @@ impl Editor {
 
             Terminal::clear_current_line();
             if row == height / 3 {
-				self.render_welcome();
+				        self.render_welcome();
             } else {
                 println!("~\r");
             }
@@ -116,9 +153,9 @@ impl Editor {
     // with default values (but none for now)
     pub fn default() -> Self {
         Self {
-            should_quit: false,
-            terminal: Terminal::default().expect("Failed to initialize terminal"),
-			cursor_position: Position {x: 0, y: 0},
+            should_quit:        false,
+            terminal:           Terminal::default().expect("Failed to initialize terminal"),
+			      cursor_position:    Position {x: 0, y: 0},
         }
     }
 }
@@ -126,7 +163,7 @@ impl Editor {
 
 fn die(e: std::io::Error) {
     print!("{}", termion::clear::All);
-    panic!(e);
+    panic!("{}", e);
 }
 
 
