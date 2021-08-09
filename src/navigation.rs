@@ -70,14 +70,27 @@ fn navigate_up(_: &Editor, position: &Position) -> Position {
 
 }
 
-fn navigate_down(_: &Editor, position: &Position) -> Position {
+fn navigate_down(editor: &Editor, position: &Position) -> Position {
     let (x, y) = position.as_tuple();
-    Position {x, y: y.saturating_add(1)}
+    let height = editor.terminal().size().height.saturating_sub(1) as usize;
+
+    if y < height {
+        Position {x, y: y.saturating_add(1)}
+    } else {
+        Position {x, y}
+    }
+
 }
 
-fn navigate_left(_: &Editor, position: &Position) -> Position {
+fn navigate_left(editor: &Editor, position: &Position) -> Position {
     let (x, y) = position.as_tuple();
-    Position {x: x.saturating_sub(1), y}
+    let width = editor.terminal().size().height.saturating_sub(1) as usize;
+
+    if x < width {
+        Position {x: x.saturating_sub(1), y}
+    } else {
+        Position {x, y}
+    }
 }
 
 fn navigate_right(_: &Editor, position: &Position) -> Position {
