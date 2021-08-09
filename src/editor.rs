@@ -1,4 +1,4 @@
-use crate::{Document, Terminal};
+use crate::{Row, Document, Terminal};
 use termion::event::Key;
 use crate::Navigable;
 
@@ -90,13 +90,24 @@ impl Editor {
 		    welcome_msg.truncate(width);
 		    println!("~{}{}\r",spaces, welcome_msg);
     }
+    
+    pub fn draw_row(&self, row: &Row) {
+        let start = 0;
+        let end = self.terminal().size().width as usize;
+        let row = row.render(start, end);
+        println!("{}\r",row);
+    }
+
 
     fn draw_rows(&self) {
         let height = self.terminal.size().height;
-        for row in 0..height - 1 {
+        for terminal_row in 0..height - 1 {
 
             Terminal::clear_current_line();
-            if row == height / 3 {
+            if let Some(row) = self.document.row(terminal_row as usize) {
+                self.draw_row(row);
+            }
+            else if self.document.is_empty() && terminal_row == height / 3 {
 				        self.render_welcome();
             } else {
                 println!("~\r");
