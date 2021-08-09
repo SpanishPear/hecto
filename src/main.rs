@@ -2,11 +2,14 @@
 mod editor;
 mod terminal;
 mod navigation;
+mod row; 
+mod document;
 
+pub use document::Document;
 use editor::Editor;
-
-pub use terminal::Terminal;
 pub use editor::Position;
+pub use row::Row;
+pub use terminal::Terminal;
 pub use navigation::Navigable;
 
 
