@@ -1,7 +1,7 @@
 use crate::{Row, Document, Terminal};
 use termion::event::Key;
 use crate::Navigable;
-
+use std::env;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Default)]
@@ -119,10 +119,19 @@ impl Editor {
     // for the struct
     // with default values (but none for now)
     pub fn default() -> Self {
+        
+        let args: Vec<String> = env::args().collect();
+        let document = if args.len() > 1 {
+            let filename = &args[1];
+            Document::open(filename).unwrap_or_default()
+        } else {
+            Document::default()
+        };
+
         Self {
             should_quit:        false,
             terminal:           Terminal::default().expect("Failed to initialize terminal"),
-            document:           Document::open(),
+            document,
 			      cursor_position:    Position::default(),
         }
     }
