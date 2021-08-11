@@ -1,4 +1,4 @@
-use crate::{Row, Document, Terminal};
+use crate::{Row, Document, Terminal, terminal::Size};
 use termion::event::Key;
 use crate::Navigable;
 use std::env;
@@ -22,6 +22,7 @@ pub struct Editor {
     terminal: Terminal,
     cursor_position: Position,
     document: Document,
+    offset: Position,
 }
 
 
@@ -77,8 +78,15 @@ impl Editor {
             Key::Ctrl('q') => self.should_quit = true,
 			      _ => (),
         }  
-
+        
+        self.scroll();
         Ok(())
+    }
+
+    fn scroll(&mut self) {
+        let Position {x, y} = self.cursor_position;
+        let Size {width, height} = self.terminal.size();
+        let mut offset =&mut self.offset;
     }
 
     fn render_welcome(&self) {
@@ -92,8 +100,10 @@ impl Editor {
     }
     
     pub fn draw_row(&self, row: &Row) {
-        let start = 0;
-        let end = self.terminal().size().width as usize;
+        
+        let width = self.terminal().size().width;
+        let start = self.offset.x;
+        let end =  start + width as usize;
         let row = row.render(start, end);
         println!("{}\r",row);
     }
@@ -102,9 +112,10 @@ impl Editor {
     fn draw_rows(&self) {
         let height = self.terminal.size().height;
         for terminal_row in 0..height - 1 {
-
+            
+            let current_row = terminal_row  as usize+ self.offset.y ;
             Terminal::clear_current_line();
-            if let Some(row) = self.document.row(terminal_row as usize) {
+            if let Some(row) = self.document.row(current_row) {
                 self.draw_row(row);
             }
             else if self.document.is_empty() && terminal_row == height / 3 {
@@ -133,6 +144,7 @@ impl Editor {
             terminal:           Terminal::default().expect("Failed to initialize terminal"),
             document,
 			      cursor_position:    Position::default(),
+            offset:             Position::default(), 
         }
     }
 
