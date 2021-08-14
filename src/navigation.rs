@@ -1,5 +1,5 @@
 use termion::event::Key;
-
+use log::{info, debug};
 // these have been linked already in main.rs, so we are simply saying to use them in this file
 use crate::Position;
 use crate::Editor;
@@ -39,6 +39,7 @@ fn navigate_line_end(editor: &Editor, position: &Position) -> Position {
     // need to replace this with the last column 
     let size = editor.terminal().size();
     let width = size.width.saturating_sub(1) as usize;
+    debug!("line end to: {} {}", width, y);
     Position {x: width, y}
 }
 
@@ -66,15 +67,22 @@ fn navigate_document_start(_: &Editor, position: &Position) -> Position {
 
 fn navigate_up(_: &Editor, position: &Position) -> Position {
     let (x, y) = position.as_tuple();
-    Position {x, y: y.saturating_sub(1)}
+    if y > 0 {
+        info!("Navigating up    to ({} {})", x, y.saturating_sub(1));
+        Position {x, y: y.saturating_sub(1)}
+    } else {
+        Position {x, y}
+    }
+
 
 }
 
 fn navigate_down(editor: &Editor, position: &Position) -> Position {
     let (x, y) = position.as_tuple();
     let height = editor.terminal().size().height.saturating_sub(1) as usize;
-
+    
     if y < height {
+        info!("Navigating down  to ({} {})", x, y.saturating_add(1));
         Position {x, y: y.saturating_add(1)}
     } else {
         Position {x, y}
@@ -82,20 +90,27 @@ fn navigate_down(editor: &Editor, position: &Position) -> Position {
 
 }
 
-fn navigate_left(editor: &Editor, position: &Position) -> Position {
+fn navigate_left(_: &Editor, position: &Position) -> Position {
     let (x, y) = position.as_tuple();
-    let width = editor.terminal().size().height.saturating_sub(1) as usize;
-
-    if x < width {
+    
+    if x > 0 {
+        info!("Navigating left  to ({} {})", x.saturating_sub(1), y);
         Position {x: x.saturating_sub(1), y}
     } else {
         Position {x, y}
     }
 }
 
-fn navigate_right(_: &Editor, position: &Position) -> Position {
+fn navigate_right(editor: &Editor, position: &Position) -> Position {
     let (x, y) = position.as_tuple();
-    Position {x: x.saturating_add(1), y}
+    let width = editor.terminal().size().width.saturating_sub(1) as usize;
+    
+    if x < width {
+        info!("Navigating right to ({} {})", x.saturating_add(1), y);
+        Position  {x: x.saturating_add(1), y}
+    } else {
+        Position {x, y}
+    }
 }
 
 

@@ -1,4 +1,5 @@
 use crate::{Row, Document, Terminal};
+use log::info;
 use termion::event::Key;
 use crate::Navigable;
 use std::env;
@@ -30,7 +31,7 @@ impl Editor {
     // removing self as per https://rust-lang.github.io/rust-clippy/master/index.html#unused_self
     // results in errors :( 
     pub fn run(&mut self) {
-
+        info!("Width is {}", self.terminal().size().width);
         loop {
             if let Err(error) = self.refresh_screen() {
                 die(error);
