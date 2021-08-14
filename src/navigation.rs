@@ -53,9 +53,9 @@ fn navigate_document_end(editor: &Editor, position: &Position) -> Position {
     let (x, _) = position.as_tuple();
     // this is the entire terminal size
     // need to replace this with the last column 
-    let size = editor.terminal().size();
+    let size = editor.document().len();
     // height is n - line num is n - 1 
-    let height = size.height.saturating_sub(1) as usize;
+    let height = size.saturating_sub(1) as usize;
     Position {x, y: height}
 }
 fn navigate_document_start(_: &Editor, position: &Position) -> Position {
@@ -79,7 +79,7 @@ fn navigate_up(_: &Editor, position: &Position) -> Position {
 
 fn navigate_down(editor: &Editor, position: &Position) -> Position {
     let (x, y) = position.as_tuple();
-    let height = editor.terminal().size().height.saturating_sub(1) as usize;
+    let height = editor.document().len();
     
     if y < height {
         info!("Navigating down  to ({} {})", x, y.saturating_add(1));
