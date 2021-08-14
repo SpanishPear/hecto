@@ -86,7 +86,7 @@ impl Editor {
         }
         match pressed_key {
             Key::Ctrl('q') => self.should_quit = true,
-			      _ => (),
+            _ => (),
         }  
 
         Ok(())

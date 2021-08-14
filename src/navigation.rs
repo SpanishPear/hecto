@@ -33,14 +33,20 @@ impl Navigable for Key {
 
 }
 
+fn calc_line_width(editor: &Editor, y: usize) -> usize {
+    if let Some(row) = editor.document().row(y) {
+        row.len()
+    } else {
+        0
+    }
+ 
+}
+
 fn navigate_line_end(editor: &Editor, position: &Position) -> Position { 
     let (_, y) = position.as_tuple();
-    // this is the entire terminal size
-    // need to replace this with the last column 
-    let size = editor.terminal().size();
-    let width = size.width.saturating_sub(1) as usize;
-    debug!("line end to: {} {}", width, y);
-    Position {x: width, y}
+    let last_col = calc_line_width(editor, y);
+    debug!("line end to: {} {}", last_col, y);
+    Position {x: last_col, y}
 }
 
 fn navigate_line_start(_: &Editor, position: &Position) -> Position {
@@ -50,25 +56,40 @@ fn navigate_line_start(_: &Editor, position: &Position) -> Position {
 }
 
 fn navigate_document_end(editor: &Editor, position: &Position) -> Position { 
-    let (x, _) = position.as_tuple();
-    // this is the entire terminal size
-    // need to replace this with the last column 
+    let (mut x, y) = position.as_tuple();
     let size = editor.document().len();
-    // height is n - line num is n - 1 
     let height = size.saturating_sub(1) as usize;
+    let width = calc_line_width(editor, y);
+
+    if x > width {
+        x = width;
+    }
+
     Position {x, y: height}
 }
-fn navigate_document_start(_: &Editor, position: &Position) -> Position {
-    let (x, _) = position.as_tuple();
-    
+
+fn navigate_document_start(editor: &Editor, position: &Position) -> Position {
+    let (mut x, _) = position.as_tuple();
+    let width = calc_line_width(editor, 0);
+
+    if x > width {
+        x = width;
+    }
     Position {x, y:0}
 }
 
 
-fn navigate_up(_: &Editor, position: &Position) -> Position {
-    let (x, y) = position.as_tuple();
+fn navigate_up(editor: &Editor, position: &Position) -> Position {
+    let (mut x, y) = position.as_tuple();
+
+
+
     if y > 0 {
         info!("Navigating up    to ({} {})", x, y.saturating_sub(1));
+        let prev_line_width = calc_line_width(editor, y.saturating_sub(1));
+        if x > prev_line_width {
+            x = prev_line_width;
+        }   
         Position {x, y: y.saturating_sub(1)}
     } else {
         Position {x, y}
@@ -78,11 +99,16 @@ fn navigate_up(_: &Editor, position: &Position) -> Position {
 }
 
 fn navigate_down(editor: &Editor, position: &Position) -> Position {
-    let (x, y) = position.as_tuple();
+    let (mut x, y) = position.as_tuple();
     let height = editor.document().len();
-    
-    if y < height {
+
+   if y < height {
         info!("Navigating down  to ({} {})", x, y.saturating_add(1));
+        let next_line_width = calc_line_width(editor, y.saturating_add(1));
+        if x > next_line_width {
+            x = next_line_width;
+        }
+ 
         Position {x, y: y.saturating_add(1)}
     } else {
         Position {x, y}
@@ -92,7 +118,6 @@ fn navigate_down(editor: &Editor, position: &Position) -> Position {
 
 fn navigate_left(_: &Editor, position: &Position) -> Position {
     let (x, y) = position.as_tuple();
-    
     if x > 0 {
         info!("Navigating left  to ({} {})", x.saturating_sub(1), y);
         Position {x: x.saturating_sub(1), y}
@@ -103,7 +128,8 @@ fn navigate_left(_: &Editor, position: &Position) -> Position {
 
 fn navigate_right(editor: &Editor, position: &Position) -> Position {
     let (x, y) = position.as_tuple();
-    let width = editor.terminal().size().width.saturating_sub(1) as usize;
+    let width = calc_line_width(editor, y);
+
     
     if x < width {
         info!("Navigating right to ({} {})", x.saturating_add(1), y);
