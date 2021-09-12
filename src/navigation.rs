@@ -116,12 +116,18 @@ fn navigate_down(editor: &Editor, position: &Position) -> Position {
 
 }
 
-fn navigate_left(_: &Editor, position: &Position) -> Position {
+fn navigate_left(editor: &Editor, position: &Position) -> Position {
     let (x, y) = position.as_tuple();
     if x > 0 {
-        info!("Navigating left  to ({} {})", x.saturating_sub(1), y);
-        Position {x: x.saturating_sub(1), y}
-    } else {
+        Position {x: x - 1, y}
+    } else if y > 0 {
+        if let Some(row) = editor.document().row(y) {
+            Position {x: row.len(), y: y - 1}
+        } else {
+            Position {x: 0, y: y - 1}
+        }
+    } 
+    else {
         Position {x, y}
     }
 }
@@ -129,11 +135,14 @@ fn navigate_left(_: &Editor, position: &Position) -> Position {
 fn navigate_right(editor: &Editor, position: &Position) -> Position {
     let (x, y) = position.as_tuple();
     let width = calc_line_width(editor, y);
-
+    // is this suppsoed to be len - 1?
+    let height = editor.document().len();
     
     if x < width {
-        info!("Navigating right to ({} {})", x.saturating_add(1), y);
-        Position  {x: x.saturating_add(1), y}
+        info!("Navigating right to ({} {})", x + 1, y);
+        Position {x: x + 1 , y}
+    } else if y < height {
+        Position {x: 0, y: y + 1}
     } else {
         Position {x, y}
     }
