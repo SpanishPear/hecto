@@ -1,6 +1,6 @@
 use crate::Position;
 use std::io::{self, stdout, Write};
-use termion::{input::TermRead, event::Key, raw::{IntoRawMode, RawTerminal}};
+use termion::{color, event::Key, input::TermRead, raw::{IntoRawMode, RawTerminal}};
 
 pub struct Size {
     pub width: u16,
@@ -12,7 +12,7 @@ pub struct Terminal {
     _stdout:    RawTerminal<std::io::Stdout> 
 }
 
-
+const FOOTER_SIZE: u16 = 2;
 
 impl Terminal {
     
@@ -24,7 +24,7 @@ impl Terminal {
         Ok(Self {
                size: Size {
                         width: size.0,
-                        height: size.1,
+                        height: size.1.saturating_sub(FOOTER_SIZE),
                      },
             _stdout: stdout().into_raw_mode().unwrap()
         })
@@ -39,11 +39,11 @@ impl Terminal {
     }
         
     pub fn cursor_position(position: &Position) {
-		let Position{mut x, mut y} = position;
-		x = x.saturating_add(1);
-		y = y.saturating_add(1);
-		let x = x as u16;
-		let y = y as u16;
+        let Position{mut x, mut y} = position;
+        x = x.saturating_add(1);
+        y = y.saturating_add(1);
+        let x = x as u16;
+        let y = y as u16;
         print!("{}", termion::cursor::Goto(x,y));
     }
 
@@ -70,5 +70,13 @@ impl Terminal {
                 return key;
             }             
         }
+    }
+
+    pub fn set_bg_color(color: color::Rgb) {
+        print!("{}", color::Bg(color));
+    }
+
+    pub fn reset_bg_color() {
+        print!("{}", color::Bg(color::Reset))
     }
 }
