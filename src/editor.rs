@@ -2,6 +2,7 @@ use crate::Navigable;
 use crate::{terminal::Size, Document, Row, Terminal};
 use log::{debug, info};
 use std::env;
+use std::fmt::format;
 use termion::{color, event::Key};
 
 const STATUS_FG_COLOR: color::Rgb = color::Rgb(63, 63, 63);
@@ -154,14 +155,26 @@ impl Editor {
             file_name = name.clone();
             file_name.truncate(20);
         };
+
         status = format!("{} - {} lines", file_name, self.document.len());
-        if width > status.len() {
+        let line_indicator = format!(
+            "{}/{}",
+            self.cursor_position.y.saturating_add(1),
+            self.document.len()
+        );
+
+        let len = status.len() + line_indicator.len();
+        if width > len {
             status.push_str(&" ".repeat(width - status.len()));
         }
 
+        status = format!("{}{}", status, line_indicator);
+        status.truncate(width);
         Terminal::set_bg_color(STATUS_BG_COLOR);
+        Terminal::set_bg_color(STATUS_FG_COLOR);
         println!("{}\r", status);
         Terminal::reset_bg_color();
+        Terminal::reset_fg_color();
     }
 
     fn draw_message_bar(&self) {
