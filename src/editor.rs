@@ -1,8 +1,11 @@
 use crate::Navigable;
 use crate::{terminal::Size, Document, Row, Terminal};
 use log::{debug, info};
+use std::cell::RefCell;
 use std::env;
 use std::fmt::format;
+use std::io::{stdout, Stdout, Write};
+use termion::screen::AlternateScreen;
 use termion::{color, event::Key};
 
 const STATUS_FG_COLOR: color::Rgb = color::Rgb(63, 63, 63);
@@ -28,6 +31,7 @@ pub struct Editor {
     cursor_position: Position,
     document: Document,
     offset: Position,
+    screen: RefCell<AlternateScreen<Stdout>>,
 }
 
 impl Editor {
@@ -59,6 +63,7 @@ impl Editor {
     }
 
     fn refresh_screen(&self) -> Result<(), std::io::Error> {
+        info!("refreshing");
         Terminal::cursor_hide();
         Terminal::clear_screen();
         Terminal::cursor_position(&Position::default());
@@ -77,6 +82,11 @@ impl Editor {
         }
         Terminal::cursor_show();
         Terminal::flush()
+    }
+
+    fn write_screen(&self, string: &String) {
+        writeln!(self.screen.borrow_mut(), "{}", string).unwrap();
+        self.screen.borrow_mut().flush().unwrap();
     }
 
     fn process_keypresses(&mut self) -> Result<(), std::io::Error> {
@@ -123,14 +133,16 @@ impl Editor {
         let padding = width.saturating_sub(len) / 2;
         let spaces = " ".repeat(padding.saturating_sub(1));
         welcome_msg.truncate(width);
-        println!("~{}{}\r", spaces, welcome_msg);
+        let string = format!("~{}{}\r", spaces, welcome_msg);
+        self.write_screen(&string);
     }
 
     pub fn draw_row(&self, row: &Row) {
         let start = self.offset.x;
         let end = self.terminal().size().width as usize + self.offset.x;
         let row = row.render(start, end);
-        println!("{}\r", row);
+        let string = format!("{}\r", row);
+        self.write_screen(&string);
     }
 
     fn draw_rows(&self) {
@@ -142,7 +154,8 @@ impl Editor {
             } else if self.document.is_empty() && terminal_row == height / 3 {
                 self.render_welcome();
             } else {
-                println!("~\r");
+                let string = format!("~\r");
+                self.write_screen(&string);
             }
         }
     }
@@ -172,7 +185,7 @@ impl Editor {
         status.truncate(width);
         Terminal::set_bg_color(STATUS_BG_COLOR);
         Terminal::set_bg_color(STATUS_FG_COLOR);
-        println!("{}\r", status);
+        self.write_screen(&status);
         Terminal::reset_bg_color();
         Terminal::reset_fg_color();
     }
@@ -199,6 +212,7 @@ impl Editor {
             document,
             cursor_position: Position::default(),
             offset: Position::default(),
+            screen: RefCell::new(AlternateScreen::from(stdout())),
         }
     }
 }

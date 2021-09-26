@@ -1,4 +1,5 @@
 use crate::Position;
+use log::info;
 use std::io::{self, stdout, Write};
 use termion::{
     color,
@@ -39,6 +40,7 @@ impl Terminal {
     }
 
     pub fn clear_screen() {
+        info!("clearing");
         print!("{}", termion::clear::All);
     }
 
