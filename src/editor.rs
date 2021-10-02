@@ -1,9 +1,9 @@
 use crate::Navigable;
-use crate::{terminal::Size, Document, Row, Terminal};
+use crate::{Document, Row, Terminal};
 use log::{debug, info};
 use std::cell::RefCell;
 use std::env;
-use std::fmt::format;
+use std::time::{Duration, Instant};
 use std::io::{stdout, Stdout, Write};
 use termion::screen::AlternateScreen;
 use termion::{color, event::Key};
@@ -23,6 +23,21 @@ impl Position {
         (self.x, self.y)
     }
 }
+
+struct StatusMessage {
+    text: String,
+    time: Instant,
+}
+
+impl StatusMessage {
+    fn from(message: String) -> Self {
+        Self{
+            time: Instant::now(),
+            text: message,
+        }
+    }
+}
+
 // we want this to be public to main.rs
 // struct contains fields for the "class"
 pub struct Editor {
@@ -32,6 +47,7 @@ pub struct Editor {
     document: Document,
     offset: Position,
     screen: RefCell<AlternateScreen<Stdout>>,
+    status_message: StatusMessage,
 }
 
 impl Editor {
@@ -192,6 +208,12 @@ impl Editor {
 
     fn draw_message_bar(&self) {
         Terminal::clear_current_line();
+        let message = &self.status_message;
+        if Instant::now() - message.time < Duration::new(5, 0){
+            let mut text = message.text.clone();
+            text.truncate(self.terminal().size().width as usize);
+            print!("{}", text);
+        }
     }
 
     // this is essentially an init function
@@ -199,12 +221,24 @@ impl Editor {
     // with default values (but none for now)
     pub fn default() -> Self {
         let args: Vec<String> = env::args().collect();
+        
+        let mut initial_status = String::from("HELP: Ctrl-Q = quit");
         let document = if args.len() > 1 {
             let filename = &args[1];
-            Document::open(filename).unwrap_or_default()
+            let doc = Document::open(&filename);
+            
+            if doc.is_ok() {
+                doc.unwrap()
+            } else {
+                initial_status = format!("ERR: Coould not open file: {}", filename);
+                Document::default()
+            }
+
         } else {
             Document::default()
         };
+
+
 
         Self {
             should_quit: false,
@@ -213,6 +247,7 @@ impl Editor {
             cursor_position: Position::default(),
             offset: Position::default(),
             screen: RefCell::new(AlternateScreen::from(stdout())),
+            status_message: StatusMessage::from(initial_status),
         }
     }
 }
